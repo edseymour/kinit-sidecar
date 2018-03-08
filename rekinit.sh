@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 [[ "$PERIOD_SECONDS" == "" ]] && PERIOD_SECONDS=3600
 
