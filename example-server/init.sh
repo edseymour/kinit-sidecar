@@ -75,7 +75,7 @@ function share_config()
 function copy_shared_config()
 {
   counter=0
-  while [[ ! -d /dev/shm/krb5 ]]
+  while [[ ! -d /dev/shm/krb5/etc ]]
   do
     echo "*** Waiting for krb5 configuration"
     sleep 2
