@@ -37,7 +37,7 @@ cat <<EOF > ${KDC_CONFIG_DIR}.d/kdc.conf
 [realms]
 
 ${KRB5_REALM} = {
-  kadmin_port = 8749
+  kadmind_port = 8749
   acl_file = ${ACL_FILE}
   max_life = 12h 0m 0s
   max_renewable_life = 7d 0h 0m 0s
