@@ -85,8 +85,9 @@ function copy_shared_config()
 
   done
 
-  cp -rp /dev/shm/krb5/* /var/kerberos/
-  cp -rp /dev/shm/krb5/etc/ /etc/
+  cp -r /dev/shm/krb5/* /var/kerberos/
+  cp /dev/shm/krb5/etc/krb5.conf /etc/
+  cp -r /dev/shm/krb5/etc/krb5.conf.d/* /etc/krb5.conf.d/
 
 }
 
