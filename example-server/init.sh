@@ -107,7 +107,7 @@ function run_kadmin()
 {
   copy_shared_config
 
-  /usr/sbin/kadmind -nofork -r ${KRB5_REALM}
+  /usr/sbin/kadmind -nofork -r ${KRB5_REALM} -port 8749
 
 }
 
