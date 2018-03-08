@@ -6,11 +6,9 @@ MAINTAINER eseymour@redhat.com
 RUN yum install -y krb5-server krb5-workstation && yum clean all
 RUN mkdir -p /var/kerberos/krb5kdc.d && \
     mkdir -p /etc/krb5.conf.d && \
-    mkdir -p /dev/shm/krb5 && \
     chmod 775 /var/kerberos/krb5kdc.d && \
     chmod 775 /var/kerberos/krb5kdc && \
-    chmod 775 /etc/krb5.conf.d && \
-    chmod 775 /dev/shm/krb5
+    chmod 775 /etc/krb5.conf.d 
 
 ADD init.sh /
 ADD kdc.conf /var/kerberos/krb5kdc/
