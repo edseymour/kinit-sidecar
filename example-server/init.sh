@@ -38,6 +38,7 @@ cat <<EOF > ${KDC_CONFIG_DIR}.d/$KRB5_REALM.conf
 [realms]
 
 ${KRB5_REALM} = {
+  kpasswd_port = 8464
   acl_file = ${ACL_FILE}
   max_life = 12h 0m 0s
   max_renewable_life = 7d 0h 0m 0s
