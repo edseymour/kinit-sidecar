@@ -11,5 +11,5 @@ VOLUME ['/krb5','/dev/shm']
 
 USER 1001
 
-CMD ['/rekinit.sh']
+ENTRYPOINT ['/rekinit.sh']
 
