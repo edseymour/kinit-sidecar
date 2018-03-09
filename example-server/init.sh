@@ -15,6 +15,8 @@ function generate_config()
    # create a kdc principal if one doesn't exist
    if [ ! -f "${KDC_DATABASE}/principal" ]; then
 
+     mkdir -p ${KDC_DATABASE}
+
      if [ -z ${KRB5_PASS} ]; then
 
         KRB5_PASS=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
