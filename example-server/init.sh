@@ -39,6 +39,7 @@ cat <<EOF > ${KDC_CONFIG_DIR}.d/$KRB5_REALM.conf
 
 ${KRB5_REALM} = {
   kpasswd_port = 8464
+  kadmind_port = 8749
   acl_file = ${ACL_FILE}
   max_life = 12h 0m 0s
   max_renewable_life = 7d 0h 0m 0s
@@ -108,7 +109,7 @@ function run_kadmin()
 {
   copy_shared_config
 
-  /usr/sbin/kadmind -nofork -r ${KRB5_REALM} -port 8749
+  /usr/sbin/kadmind -nofork -r ${KRB5_REALM} 
 
 }
 
