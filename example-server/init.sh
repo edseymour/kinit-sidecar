@@ -60,7 +60,7 @@ EOF
 
    kdb5_util create -r ${KRB5_REALM} < /tmp/krb5_pass
    rm /tmp/krb5_pass
-   kadmin.local -r ${KRB5_REALM} -q "addprinc -pw ${KRB5_PASS} admin/admin@${KRB5_REALM}"
+   kadmin.local -r ${KRB5_REALM} -p "K/M@KRV.SVC" -q "addprinc -pw ${KRB5_PASS} admin/admin@${KRB5_REALM}"
 
    fi
 }
