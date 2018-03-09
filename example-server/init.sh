@@ -2,6 +2,8 @@
 
 KDC_CONFIG_DIR=/var/kerberos/krb5kdc
 
+KDC_DATABASE=/dev/shm/kerberos/db
+
 [ -z ${KRB5_KDC} ] && echo "*** KRB5_KDC variable not set, KDC host missing, using 'localhost' as default." && KRB5_KDC=localhost
 
 [ -z ${RUN_MODE} ] && echo "*** RUN_MODE not specified, options are 'kdc', and 'kadmin'. Default is 'kdc'" && RUN_MODE=kdc
@@ -11,7 +13,7 @@ KDC_CONFIG_DIR=/var/kerberos/krb5kdc
 function generate_config()
 {
    # create a kdc principal if one doesn't exist
-   if [ ! -f "${KDC_CONFIG_DIR}/principal" ]; then
+   if [ ! -f "${KDC_DATABASE}/principal" ]; then
 
      if [ -z ${KRB5_PASS} ]; then
 
@@ -46,6 +48,11 @@ ${KRB5_REALM} = {
   master_key_type = aes256-cts
   supported_enctypes = aes256-cts:normal aes128-cts:normal
   default_principal_flags = +preauth
+}
+
+[dbmodules]
+ ${KRB5_REALM} = {
+   database_name = ${KDC_DATABASE}/principal
 }
 
 EOF
@@ -87,7 +94,7 @@ function copy_shared_config()
 
   done
 
-  cp -r /dev/shm/krb5/* /var/kerberos/
+  cp -r /dev/shm/krb5/krb5* /var/kerberos/
   cp /dev/shm/krb5/etc/krb5.conf /etc/
   cp -r /dev/shm/krb5/etc/krb5.conf.d/* /etc/krb5.conf.d/
 
