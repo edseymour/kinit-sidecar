@@ -27,7 +27,8 @@ cat <<EOF > /etc/krb5.conf.d/$KRB5_REALM.conf
 [realms]
 ${KRB5_REALM} = {
    kdc = ${KRB5_KDC}:8888
-   admin_server = localhost:8749
+   admin_server = ${KRB5_KDC}:8749
+   kpasswd_server = ${KRB5_KDC}:8464
 }
 
 EOF
