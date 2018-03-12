@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: client
+parameters:
+- name: PREFIX
+  displayName: Prefix
+  description: Prefix to uniquely identify the client app and its resources
+  required: true
+- name: IMAGE
+  displayName: KInit Sidecar Image
+  description: Image reference for the KInit Sidecar container. 
+  value: edseymour/kinit-sidecar
+  required: true
+- name: KDC_SERVER
+  displayName: KDC Server
+  description: Hostname (service name) of the KDC Server
+  required: true
+- name: KRB5_REALM
+  displayName: Kerberos Realm
+  required: true
+  value: EXAMPLE.COM
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${PREFIX}-kinit-sidecar
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: ${IMAGE}
+      importPolicy: 
+        scheduled: true
+      name: latest
+      referencePolicy:
+        type: ""
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${PREFIX}-example-app
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      deploymentconfig: ${PREFIX}-example-app
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          deploymentconfig: ${PREFIX}-example-app
+      spec:
+        containers:
+        - env:
+          - name: PERIOD_SECONDS
+            value: "10"
+          - name: OPTIONS
+            value: -V -k example@${KRB5_REALM}
+          image: ''
+          imagePullPolicy: Always
+          name: kinit-sidecar
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /krb5
+            name: keytabs
+          - mountPath: /dev/shm
+            name: ccache
+          - mountPath: /etc/krb5.conf.d
+            name: config
+        - image: ''
+          imagePullPolicy: Always
+          name: example-app
+          command:
+          - /bin/sh
+          - -c 
+          - 'while true; do echo "*** checking if authenticated"; klist ; sleep 5; done'
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: ccache
+          - mountPath: /etc/krb5.conf.d
+            name: config
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: keytabs
+        - emptyDir:
+            medium: Memory
+          name: ccache
+        - configMap:
+            defaultMode: 420
+            name: ${PREFIX}-krb5-client
+          name: config
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - example-app
+        - kinit-sidecar
+        from:
+          kind: ImageStreamTag
+          name: ${PREFIX}-kinit-sidecar:latest
+      type: ImageChange
+- apiVersion: v1
+  data:
+    ${KRB5_REALM}.conf: |+
+      [realms]
+      ${KRB5_REALM} = {
+         kdc = ${KDC_SERVER}:88
+         admin_server = ${KDC_SERVER}:749
+         kpasswd_server = ${KDC_SERVER}:464
+      }
+
+  kind: ConfigMap
+  metadata:
+    name: ${PREFIX}-krb5-client

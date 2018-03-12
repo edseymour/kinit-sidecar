@@ -1,0 +1,163 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: krb5-server
+parameters:
+- name: NAME
+  displayName: Name
+  description: Name of the KDC application
+  required: true
+- name: IMAGE
+  displayName: Image
+  description: Container image specification
+  value: edseymour/kdc-server
+- name: KRB5_REALM
+  displayName: Kerberos Realm
+  value: EXAMPLE.COM
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${NAME}
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: ${IMAGE}
+      generation: null
+      importPolicy: 
+        scheduled: true
+      name: latest
+      referencePolicy:
+        type: ""
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${NAME}
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          deploymentconfig: ${NAME}
+      spec:
+        containers:
+        - env:
+          - name: RUN_MODE
+            value: kadmin
+          - name: KRB5_KDC
+            value: ${NAME}
+          - name: KRB5_REALM
+            value: ${KRB5_REALM}
+          image: ''
+          imagePullPolicy: Always
+          name: kadmin
+          ports:
+          - containerPort: 8888
+            protocol: TCP
+          - containerPort: 8888
+            protocol: UDP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: share
+        - env:
+          - name: RUN_MODE
+            value: kdc
+          - name: KRB5_KDC
+            value: ${NAME}
+          - name: KRB5_REALM
+            value: ${KRB5_REALM}
+          image: ''
+          imagePullPolicy: Always
+          name: kdc
+          ports:
+          - containerPort: 8749
+            protocol: TCP
+          - containerPort: 8749
+            protocol: UDP
+          - containerPort: 8464
+            protocol: UDP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: share
+          - mountPath: /var/kerberos/krb5kdc.d
+            name: kdc-config
+          - mountPath: /etc/krb.conf.d
+            name: krb5-config
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir:
+            medium: Memory
+          name: share
+        - emptyDir: {}
+          name: kdc-config
+        - emptyDir: {}
+          name: krb5-config
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - kdc
+        - kadmin
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:latest
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: ${NAME}
+  spec:
+    ports:
+    - name: kerberos-kdc-tcp
+      port: 88
+      protocol: TCP
+      targetPort: 8888
+    - name: kerberos-kdc
+      port: 88
+      protocol: UDP
+      targetPort: 8888
+    - name: kpasswd
+      port: 464
+      protocol: UDP
+      targetPort: 8464
+    - name: kadmin
+      port: 749
+      protocol: UDP
+      targetPort: 8749
+    - name: kadmin-tcp
+      port: 749
+      protocol: TCP
+      targetPort: 8749
+    selector:
+      deploymentconfig: ${NAME}
+    sessionAffinity: None
+    type: ClusterIP

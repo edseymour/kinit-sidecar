@@ -1,0 +1,147 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: krb5
+parameters:
+- name: PREFIX
+  displayName: Prefix
+  description: Prefix to apply to the resource names 
+  required: true
+- name: SIDECAR_SOURCE
+  displayName: Kinit Source URI
+  description: Git URI for sidecar source code
+  required: true
+  value: https://github.com/edseymour/kinit-sidecar.git
+- name: SIDECAR_SOURCE_DIR
+  displayName: Kinit Source Dir
+  description: Directory within source repo containing the kinit source code
+  required: false
+- name: KDC_SOURCE
+  displayName: KDC Source URI
+  description: Git URI for KDC source code
+  required: true
+  value: https://github.com/edseymour/kinit-sidecar.git
+- name: KDC_SOURCE_DIR
+  displayName: KDC Source Dir
+  description: Directory within source repo containing the KDC source code
+  required: false
+  value: 'example-server'
+- name: SIDECAR_GITHUB_WEBHOOK
+  displayName: Sidecar GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- name: SIDECAR_GENERIC_WEBHOOK
+  displayName: Sidecar Generic Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- name: KDC_GITHUB_WEBHOOK
+  displayName: KDC GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  required: true
+- name: KDC_GENERIC_WEBHOOK
+  displayName: KDC Generic Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: GITHUB_WEBHOOK_SECRET
+  required: true
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${PREFIX}-centos
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: {}
+      importPolicy:
+        scheduled: true
+      from:
+        kind: DockerImage
+        name: centos:centos7
+      name: centos7
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${PREFIX}-kinit-sidecar
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${PREFIX}-kdc
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: ${PREFIX}-kinit-sidecar
+  spec:
+    failedBuildsHistoryLimit: 5
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${PREFIX}-kinit-sidecar:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: ${SIDECAR_SOURCE_DIR}
+      git:
+        uri: ${SIDECAR_SOURCE}
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: ${PREFIX}-centos:centos7
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: ${SIDECAR_GITHUB_WEBHOOK}
+      type: GitHub
+    - generic:
+        secret: ${SIDECAR_GENERIC_WEBHOOK}
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: ${PREFIX}-krb5-server
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${PREFIX}-kdc:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: ${KDC_SOURCE_DIR}
+      git:
+        uri: ${KDC_SOURCE}
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: ${PREFIX}-centos:centos7
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: ${KDC_GITHUB_WEBHOOK}
+      type: GitHub
+    - generic:
+        secret: ${KDC_GENERIC_WEBHOOK}
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
