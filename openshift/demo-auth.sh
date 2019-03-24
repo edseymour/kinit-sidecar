@@ -69,7 +69,7 @@ admin_pwd=$(oc logs -c kdc $server_pod | head -n 1 | sed 's/.*Your\ KDC\ passwor
 
 app_pod=$(oc get pods -l app=client -o name)
 
-principal=$(oc env $app_pod --list | grep OPTIONS | grep -o "[a-z]*\@[A-Z\.]*")
+principal=$(oc set env $app_pod --list | grep OPTIONS | grep -o "[a-z]*\@[A-Z\.]*")
 realm=$(echo $principal | sed 's/[a-z]*\@//')
 
 # create principal

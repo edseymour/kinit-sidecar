@@ -68,7 +68,7 @@ objects:
           - name: PERIOD_SECONDS
             value: "10"
           - name: OPTIONS
-            value: -V -k example@${KRB5_REALM}
+            value: -k example@${KRB5_REALM}
           image: ''
           imagePullPolicy: Always
           name: kinit-sidecar
